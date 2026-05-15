@@ -10,14 +10,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,11 +39,37 @@ fun ContactsScreen(
     modifier: Modifier = Modifier,
     viewModel: ContactsViewModel
 ) {
-    val uiState by viewModel.contactsState.collectAsState()
+    val contactsState by viewModel.contactsState.collectAsState()
+    val callPermissionGranted by viewModel.callPermissionGranted.collectAsState()
     val context = LocalContext.current
+    var showCallPermissionDialog by remember { mutableStateOf(false) }
+
+    if (showCallPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showCallPermissionDialog = false },
+            title = { Text("Требуется разрешение на звонки") },
+            text = { Text("Чтобы звонить контактам, разрешите доступ к телефону в настройках") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showCallPermissionDialog = false
+                    context.startActivity(
+                        Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", context.packageName, null)
+                        )
+                    )
+                }) { Text("Открыть настройки") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCallPermissionDialog = false }) {
+                    Text("Отмена")
+                }
+            }
+        )
+    }
 
     Scaffold(modifier = modifier) { paddingValues ->
-        when (val contactsState = uiState) {
+        when (val state = contactsState) {
             is ContactsViewModel.ContactsState.Loading -> {
                 Box(
                     modifier = Modifier
@@ -88,7 +119,7 @@ fun ContactsScreen(
             }
 
             is ContactsViewModel.ContactsState.Success -> {
-                if (contactsState.groupedContacts.isEmpty()) {
+                if (state.groupedContacts.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -107,11 +138,15 @@ fun ContactsScreen(
                 } else {
                     ContactsList(
                         modifier = Modifier.padding(paddingValues),
-                        groupedContacts = contactsState.groupedContacts,
+                        groupedContacts = state.groupedContacts,
                         onContactClick = { number ->
-                            context.startActivity(
-                                Intent(Intent.ACTION_CALL, "tel:$number".toUri())
-                            )
+                            if (callPermissionGranted) {
+                                context.startActivity(
+                                    Intent(Intent.ACTION_CALL, "tel:$number".toUri())
+                                )
+                            } else {
+                                showCallPermissionDialog = true
+                            }
                         }
                     )
                 }

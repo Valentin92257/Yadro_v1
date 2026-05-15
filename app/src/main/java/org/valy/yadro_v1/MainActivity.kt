@@ -21,6 +21,12 @@ class MainActivity : ComponentActivity() {
         } else {
             viewModel.onContactsPermissionDenied()
         }
+
+        if (permissions[Manifest.permission.CALL_PHONE] == true) {
+            viewModel.onCallPermissionGranted()
+        } else {
+            viewModel.onCallPermissionDenied()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

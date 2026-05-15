@@ -24,6 +24,9 @@ class ContactsViewModel : ViewModel() {
     private val _contactsState = MutableStateFlow<ContactsState>(ContactsState.Loading)
     val contactsState: StateFlow<ContactsState> = _contactsState.asStateFlow()
 
+    private val _callPermissionGranted = MutableStateFlow(false)
+    val callPermissionGranted: StateFlow<Boolean> = _callPermissionGranted.asStateFlow()
+
     fun loadContacts(context: Context) {
         viewModelScope.launch {
             val grouped = repository.getContacts(context)
@@ -35,5 +38,13 @@ class ContactsViewModel : ViewModel() {
 
     fun onContactsPermissionDenied() {
         _contactsState.value = ContactsState.PermissionDenied
+    }
+
+    fun onCallPermissionGranted() {
+        _callPermissionGranted.value = true
+    }
+
+    fun onCallPermissionDenied() {
+        _callPermissionGranted.value = false
     }
 }
