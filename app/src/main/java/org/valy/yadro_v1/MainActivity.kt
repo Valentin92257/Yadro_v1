@@ -1,30 +1,42 @@
 package org.valy.yadro_v1
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
-import org.valy.yadro_v1.ui.theme.Yadro_v1Theme
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import org.valy.yadro_v1.view.screens.ContactsScreen
 import org.valy.yadro_v1.viewModel.ContactsViewModel
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: ContactsViewModel by viewModels()
+
+    private val requestPermissions = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions[Manifest.permission.READ_CONTACTS] == true) {
+            viewModel.loadContacts(this)
+        } else {
+            viewModel.onContactsPermissionDenied()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        requestPermissions.launch(
+            arrayOf(
+                Manifest.permission.READ_CONTACTS,
+                Manifest.permission.CALL_PHONE
+            )
+        )
+
         setContent {
-            Yadro_v1Theme {
-                Scaffold(modifier = Modifier.statusBarsPadding()) { innerPadding ->
-                    ContactsScreen(
-                        modifier = Modifier.padding(innerPadding),
-                        ContactsViewModel()
-                    )
-                }
-            }
+            ContactsScreen(viewModel = viewModel)
         }
     }
 }

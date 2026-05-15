@@ -4,26 +4,36 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.valy.yadro_v1.data.Contact
 import org.valy.yadro_v1.data.ContactsRepository
-import kotlin.collections.groupBy
-import kotlin.collections.toSortedMap
+import java.util.SortedMap
 
 class ContactsViewModel : ViewModel() {
-    private val contactsRepository: ContactsRepository = ContactsRepository.getInstance()
 
-    private val _contacts = MutableStateFlow(emptyList<Contact>())
-    val groupedContacts = _contacts.map { contacts ->
-        contacts.groupBy {
-            it.name.firstOrNull()?.uppercase() ?: "#"
-        }.toSortedMap()
+    private val repository = ContactsRepository.getInstance()
+
+    sealed class ContactsState {
+        object Loading : ContactsState()
+        object PermissionDenied : ContactsState()
+        data class Success(val groupedContacts: SortedMap<String, List<Contact>>) : ContactsState()
     }
+
+    private val _contactsState = MutableStateFlow<ContactsState>(ContactsState.Loading)
+    val contactsState: StateFlow<ContactsState> = _contactsState.asStateFlow()
 
     fun loadContacts(context: Context) {
         viewModelScope.launch {
-            _contacts.value = contactsRepository.getContacts(context)
+            val grouped = repository.getContacts(context)
+                .groupBy { it.name.firstOrNull()?.uppercase() ?: "#" }
+                .toSortedMap()
+            _contactsState.value = ContactsState.Success(grouped)
         }
+    }
+
+    fun onContactsPermissionDenied() {
+        _contactsState.value = ContactsState.PermissionDenied
     }
 }
