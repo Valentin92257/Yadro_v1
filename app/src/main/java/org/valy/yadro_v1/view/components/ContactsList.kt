@@ -21,7 +21,7 @@ fun ContactsList(
     groupedContacts: Map<String, List<Contact>>,
     onContactClick: (String) -> Unit
 ) {
-    LazyColumn {
+    LazyColumn(modifier = modifier) {
         groupedContacts.forEach { (letter, contacts) ->
             item(key = "header_$letter") {
                 SectionHeader(letter = letter)

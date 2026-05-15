@@ -27,15 +27,14 @@ class ContactsRepository private constructor() {
             ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
             ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY,
             ContactsContract.CommonDataKinds.Phone.NUMBER,
-            ContactsContract.CommonDataKinds.Phone.PHOTO_URI
+            ContactsContract.CommonDataKinds.Phone.PHOTO_URI,
+            ContactsContract.CommonDataKinds.Phone.TYPE
         )
 
         val selection = "${ContactsContract.CommonDataKinds.Phone.IN_VISIBLE_GROUP} = 1"
         val sortOrder = "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY} ASC"
 
-        val contentResolver = context.applicationContext.contentResolver
-
-        val cursor = contentResolver.query(
+        val cursor = context.applicationContext.contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             projection,
             selection,
@@ -45,13 +44,15 @@ class ContactsRepository private constructor() {
 
         cursor?.use {
             val idCol = it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
-            val nameCol =
-                it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY)
+            val nameCol = it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME_PRIMARY)
             val numberCol = it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            val photoCol =
-                it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
+            val photoCol = it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
+            val typeCol = it.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.TYPE)
 
             while (it.moveToNext()) {
+                val type = it.getInt(typeCol)
+                if (type != ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE) continue
+
                 val id = it.getLong(idCol)
                 val name = it.getString(nameCol)
                 val number = it.getString(numberCol)
@@ -61,6 +62,6 @@ class ContactsRepository private constructor() {
             }
         }
 
-        contacts
+        contacts.distinctBy { it.id }
     }
 }

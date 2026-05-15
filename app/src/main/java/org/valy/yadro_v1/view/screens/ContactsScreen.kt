@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,70 +37,84 @@ fun ContactsScreen(
     val uiState by viewModel.contactsState.collectAsState()
     val context = LocalContext.current
 
-    when (val contactsState = uiState) {
-        is ContactsViewModel.ContactsState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-
-        is ContactsViewModel.ContactsState.PermissionDenied -> {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "Нет доступа к контактам",
-                    style = TextStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 20.sp
-                    ),
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = {
-                    context.startActivity(
-                        Intent(
-                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.fromParts("package", context.packageName, null)
-                        )
-                    )
-                }) {
-                    Text(
-                        text = "Открыть настройки",
-                        style = TextStyle(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            fontSize = 20.sp
-                        ),
-                        fontWeight = FontWeight.Bold,
-                    )
+    Scaffold(modifier = modifier) { paddingValues ->
+        when (val contactsState = uiState) {
+            is ContactsViewModel.ContactsState.Loading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
             }
-        }
 
-        is ContactsViewModel.ContactsState.Success -> {
-            if (contactsState.groupedContacts.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            is ContactsViewModel.ContactsState.PermissionDenied -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text(
-                        text = "Контакты не найдены",
+                        text = "Нет доступа к контактам",
                         style = TextStyle(
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 20.sp
                         ),
                         fontWeight = FontWeight.Bold,
                     )
-                }
-            } else {
-                ContactsList(
-                    modifier = modifier,
-                    groupedContacts = contactsState.groupedContacts,
-                    onContactClick = { number ->
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = {
                         context.startActivity(
-                            Intent(Intent.ACTION_CALL, "tel:$number".toUri())
+                            Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", context.packageName, null)
+                            )
+                        )
+                    }) {
+                        Text(
+                            text = "Открыть настройки",
+                            style = TextStyle(
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                fontSize = 20.sp
+                            ),
+                            fontWeight = FontWeight.Bold,
                         )
                     }
-                )
+                }
+            }
+
+            is ContactsViewModel.ContactsState.Success -> {
+                if (contactsState.groupedContacts.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Контакты не найдены",
+                            style = TextStyle(
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 20.sp
+                            ),
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                } else {
+                    ContactsList(
+                        modifier = Modifier.padding(paddingValues),
+                        groupedContacts = contactsState.groupedContacts,
+                        onContactClick = { number ->
+                            context.startActivity(
+                                Intent(Intent.ACTION_CALL, "tel:$number".toUri())
+                            )
+                        }
+                    )
+                }
             }
         }
     }
