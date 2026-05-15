@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,7 +19,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import org.valy.yadro_v1.view.components.ContactsList
 import org.valy.yadro_v1.viewModel.ContactsViewModel
@@ -31,19 +35,27 @@ fun ContactsScreen(
     val uiState by viewModel.contactsState.collectAsState()
     val context = LocalContext.current
 
-    when (val state = uiState) {
+    when (val contactsState = uiState) {
         is ContactsViewModel.ContactsState.Loading -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
+
         is ContactsViewModel.ContactsState.PermissionDenied -> {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text("Нет доступа к контактам")
+                Text(
+                    text = "Нет доступа к контактам",
+                    style = TextStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 20.sp
+                    ),
+                    fontWeight = FontWeight.Bold,
+                )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {
                     context.startActivity(
@@ -53,20 +65,41 @@ fun ContactsScreen(
                         )
                     )
                 }) {
-                    Text("Открыть настройки")
+                    Text(
+                        text = "Открыть настройки",
+                        style = TextStyle(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            fontSize = 20.sp
+                        ),
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             }
         }
+
         is ContactsViewModel.ContactsState.Success -> {
-            ContactsList(
-                modifier = modifier,
-                groupedContacts = state.groupedContacts,
-                onContactClick = { number ->
-                    context.startActivity(
-                        Intent(Intent.ACTION_CALL, "tel:$number".toUri())
+            if (contactsState.groupedContacts.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "Контакты не найдены",
+                        style = TextStyle(
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 20.sp
+                        ),
+                        fontWeight = FontWeight.Bold,
                     )
                 }
-            )
+            } else {
+                ContactsList(
+                    modifier = modifier,
+                    groupedContacts = contactsState.groupedContacts,
+                    onContactClick = { number ->
+                        context.startActivity(
+                            Intent(Intent.ACTION_CALL, "tel:$number".toUri())
+                        )
+                    }
+                )
+            }
         }
     }
 }
